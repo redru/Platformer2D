@@ -7,6 +7,7 @@ public class PlayerController : MonoBehaviour {
 	public float speed = 5f;
 	public float jumpForce = 100f;
     public int attackPower = 10;
+    public AudioSource audioAttack;
     public Transform attackPoint;
 
 	private Rigidbody2D rb;
@@ -37,9 +38,11 @@ public class PlayerController : MonoBehaviour {
         // Get left mouse click, handle attack and set Animation
         if (Input.GetMouseButtonDown(0)) {
             if (rb.velocity.x != 0f || !grounded) {
+                audioAttack.Play();
                 anim.SetTrigger("RunAttack");
                 checkAttackCollision(Physics2D.OverlapCircleAll(attackPoint.position, 0.20f, attackMask.value));
             } else {
+                audioAttack.Play();
                 anim.SetTrigger("IdleAttack");
                 checkAttackCollision(Physics2D.OverlapCircleAll(attackPoint.position, 0.20f, attackMask.value));
             }
