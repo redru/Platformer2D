@@ -68,12 +68,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Prefabs\Enemies\EnergyBallController.cs" />
-    <Compile Include="Assets\Prefabs\Level\HorizontalPlatformController.cs" />
+    <Compile Include="Assets\Prefabs\Enemies\Boss_1\Boss1Controller.cs" />
+    <Compile Include="Assets\Prefabs\Enemies\EnergyBall\EnergyBallController.cs" />
+    <Compile Include="Assets\Prefabs\Level\DynamicPlatformController.cs" />
     <Compile Include="Assets\Prefabs\Player\PlayerController.cs" />
     <Compile Include="Assets\Scripts\CameraController.cs" />
     <Compile Include="Assets\Scripts\IDamageable.cs" />
     <Compile Include="Assets\Scripts\IKillable.cs" />
+    <Compile Include="Assets\TitleScreenManager.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2015\UnityVS.CSharp.targets" />
 </Project>

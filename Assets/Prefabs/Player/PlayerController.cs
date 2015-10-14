@@ -16,7 +16,7 @@ public class PlayerController : MonoBehaviour {
     private float rotation = 1f; // Needed to move correctly when PJ is on platforms
 
     // Level elements
-    private HorizontalPlatformController platform = null;
+    private DynamicPlatformController platform = null;
 
     // Player states
     private bool grounded = true;
@@ -29,28 +29,37 @@ public class PlayerController : MonoBehaviour {
     }
 
 	void Update () {
-        // If is press Space button, jump and set Animation
-		if (Input.GetKeyDown (KeyCode.Space) && grounded) {
-			rb.AddForce (new Vector2(0f, jumpForce) , ForceMode2D.Impulse);
-            anim.SetBool("Jumping", true);
-		}
+        // Remove all PJ logic when is dead
+        if (!dead) {
 
-        // Get left mouse click, handle attack and set Animation
-        if (Input.GetMouseButtonDown(0)) {
-            if (rb.velocity.x != 0f || !grounded) {
-                audioAttack.Play();
-                anim.SetTrigger("RunAttack");
-                checkAttackCollision(Physics2D.OverlapCircleAll(attackPoint.position, 0.20f, attackMask.value));
-            } else {
-                audioAttack.Play();
-                anim.SetTrigger("IdleAttack");
-                checkAttackCollision(Physics2D.OverlapCircleAll(attackPoint.position, 0.20f, attackMask.value));
+            // If is press Space button, jump and set Animation
+            if (Input.GetKeyDown(KeyCode.Space) && grounded)
+            {
+                rb.AddForce(new Vector2(0f, jumpForce), ForceMode2D.Impulse);
+                anim.SetBool("Jumping", true);
             }
-                
-        }
 
-        // Checks if PJ is dead
-        checkDeath();
+            // Get left mouse click, handle attack and set Animation
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (rb.velocity.x != 0f || !grounded)
+                {
+                    audioAttack.Play();
+                    anim.SetTrigger("RunAttack");
+                    checkAttackCollision(Physics2D.OverlapCircleAll(attackPoint.position, 0.20f, attackMask.value));
+                }
+                else
+                {
+                    audioAttack.Play();
+                    anim.SetTrigger("IdleAttack");
+                    checkAttackCollision(Physics2D.OverlapCircleAll(attackPoint.position, 0.20f, attackMask.value));
+                }
+
+            }
+
+            // Checks if PJ is dead
+            checkDeath();
+        }
     }
 
 	void FixedUpdate() {
@@ -89,11 +98,12 @@ public class PlayerController : MonoBehaviour {
     void OnCollisionStay2D(Collision2D coll) {
         // Case when PJ is on a platform
         if (coll.gameObject.tag == "DynamicPlatform" && platform == null) {
-            platform = coll.gameObject.GetComponent<HorizontalPlatformController> ();
+            platform = coll.gameObject.GetComponent<DynamicPlatformController> ();
         }
 
         if (platform != null) {
-            transform.Translate(Vector3.right * rotation * platform.speed * platform.direction * Time.deltaTime);
+            transform.Translate(Vector3.right * rotation * platform.horizontalSpeed * platform.horizontalDirection * Time.deltaTime);
+            transform.Translate(Vector3.up * rotation * platform.verticalSpeed * platform.verticalDirection * Time.deltaTime);
         }
     }
 
@@ -110,7 +120,7 @@ public class PlayerController : MonoBehaviour {
         // Show reset button if dead
         if (dead) {
             if (GUI.Button(new Rect((Screen.width / 2) - 60, (Screen.height / 2) - 20, 120, 40), "RESET LEVEL")) {
-                Application.LoadLevel("level0");
+                Application.LoadLevel("title_screen");
             }
         }
     }
