@@ -28,12 +28,12 @@ $RECYCLE.BIN/
 *.booproj
 
 # Unity generated folders
-*/library/*
-*/Library/*
-*/temp/*
-*/Temp/*
-*/obj/*
-*/Obj/*
+library/*
+Library/*
+temp/*
+Temp/*
+obj/*
+Obj/*
 
 # =========================
 # Operating System Files
