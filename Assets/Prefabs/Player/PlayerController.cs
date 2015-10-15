@@ -7,6 +7,7 @@ public class PlayerController : MonoBehaviour {
 	public float speed = 5f;
 	public float jumpForce = 100f;
     public int attackPower = 10;
+    public float attackRate = 1f;
     public AudioSource audioAttack;
     public Transform attackPoint;
 
@@ -14,6 +15,7 @@ public class PlayerController : MonoBehaviour {
 	private Animator anim;
     private LayerMask attackMask = -1;
     private float rotation = 1f; // Needed to move correctly when PJ is on platforms
+    private float lastAttackMoment = 0f;
 
     // Level elements
     private DynamicPlatformController platform = null;
@@ -40,21 +42,16 @@ public class PlayerController : MonoBehaviour {
             }
 
             // Get left mouse click, handle attack and set Animation
-            if (Input.GetMouseButtonDown(0))
-            {
-                if (rb.velocity.x != 0f || !grounded)
-                {
-                    audioAttack.Play();
+            if (Input.GetMouseButtonDown(0) && lastAttackMoment + attackRate <= (Time.time)) {
+                if (rb.velocity.x != 0f || !grounded) {
                     anim.SetTrigger("RunAttack");
-                    checkAttackCollision(Physics2D.OverlapCircleAll(attackPoint.position, 0.20f, attackMask.value));
-                }
-                else
-                {
-                    audioAttack.Play();
+                } else {
                     anim.SetTrigger("IdleAttack");
-                    checkAttackCollision(Physics2D.OverlapCircleAll(attackPoint.position, 0.20f, attackMask.value));
                 }
 
+                audioAttack.Play();
+                checkAttackCollision(Physics2D.OverlapCircleAll(attackPoint.position, 0.20f, attackMask.value));
+                lastAttackMoment = Time.time;
             }
 
             // Checks if PJ is dead
