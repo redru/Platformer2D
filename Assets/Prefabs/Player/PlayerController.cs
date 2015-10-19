@@ -4,7 +4,8 @@ using System.Collections;
 public class PlayerController : MonoBehaviour {
 
     public int life = 100;
-	public float speed = 5f;
+    public int playerDefaultLifes = 3;
+    public float speed = 5f;
 	public float jumpForce = 100f;
     public int attackPower = 10;
     public float attackRate = 1f;
@@ -23,26 +24,30 @@ public class PlayerController : MonoBehaviour {
     // Player states
     private bool grounded = true;
     private bool dead = false;
+    private bool stunned = false;
+    private float stunTime = 0f;
+    private float stunCount = 0f;
 
 	void Start () {
-		rb = GetComponent<Rigidbody2D> ();
+        rb = GetComponent<Rigidbody2D> ();
 		anim = GetComponent<Animator> ();
-        attackMask = LayerMask.GetMask("Enemy");
+        attackMask = LayerMask.GetMask("Enemy", "EnemyPlayerCollider");
     }
 
 	void Update () {
         // Remove all PJ logic when is dead
         if (!dead) {
+            updateStun();
 
             // If is press Space button, jump and set Animation
-            if (Input.GetKeyDown(KeyCode.Space) && grounded)
+            if (Input.GetKeyDown(KeyCode.Space) && grounded && !stunned)
             {
                 rb.AddForce(new Vector2(0f, jumpForce), ForceMode2D.Impulse);
                 anim.SetBool("Jumping", true);
             }
 
             // Get left mouse click, handle attack and set Animation
-            if (Input.GetMouseButtonDown(0) && lastAttackMoment + attackRate <= (Time.time)) {
+            if (Input.GetMouseButtonDown(0) && !stunned && lastAttackMoment + attackRate <= (Time.time)) {
                 if (rb.velocity.x != 0f || !grounded) {
                     anim.SetTrigger("RunAttack");
                 } else {
@@ -69,28 +74,42 @@ public class PlayerController : MonoBehaviour {
             // Ground check
             grounded = (rb.velocity.y > -0.001f && rb.velocity.y < 0.001f);
 
-            if (grounded) {
+            if (grounded && !stunned) {
                 anim.SetBool("Jumping", false);
             }
 
-            if (h != 0f) {
+            if (h != 0f && !stunned)
+            {
                 rb.velocity = new Vector2(speed * h, rb.velocity.y);
                 anim.SetBool("Running", true);
 
                 // Character rotation based on the positiveness of the velocity
-                if (h < 0f) {
+                if (h < 0f)
+                {
                     transform.rotation = Quaternion.AngleAxis(180, Vector2.up);
                     rotation = -1f;
                 } else if (h > 0f) {
                     transform.rotation = Quaternion.AngleAxis(0, Vector2.up);
                     rotation = 1f;
                 }
-            } else {
+            } else if (h == 0f && !stunned) {
                 rb.velocity = new Vector2(0f, rb.velocity.y);
                 anim.SetBool("Running", false);
             }
         }
 	}
+
+    void OnTriggerEnter2D(Collider2D coll) {
+        // If collides with EnergyBall, stun and retreat
+        if (coll.gameObject.tag == "EnergyBall") {
+            Vector2 currentVel = rb.velocity;
+            stun(0.25f);
+            rb.velocity = currentVel * -2;
+        } else if (coll.gameObject.name == "Boss1Event") {
+            stun(1.5f);
+        }
+
+    }
 
     void OnCollisionStay2D(Collision2D coll) {
         // Case when PJ is on a platform
@@ -107,25 +126,37 @@ public class PlayerController : MonoBehaviour {
     void OnCollisionExit2D(Collision2D coll)
     {
         // Case when PJ is on a platform
-        if (coll.gameObject.tag == "DynamicPlatform")
-        {
+        if (coll.gameObject.tag == "DynamicPlatform") {
             platform = null;
         }
     }
 
-    void OnGUI() {
-        // Show reset button if dead
-        if (dead) {
-            if (GUI.Button(new Rect((Screen.width / 2) - 60, (Screen.height / 2) - 20, 120, 40), "RESET LEVEL")) {
-                Application.LoadLevel("title_screen");
-            }
+    // Stuns the player for the given time
+    void stun(float time) {
+        stunTime = time;
+        stunned = true;
+        rb.velocity = Vector2.zero;
+        anim.SetBool("Running", false);
+        anim.SetBool("Jumping", false);
+    }
+
+    void updateStun() {
+        if (stunned && stunCount + Time.deltaTime < stunTime) {
+            stunCount += Time.deltaTime;
+        } else {
+            stunCount = 0f;
+            stunned = false;
         }
     }
 
     // If dead, remove gravity, stop showing the sprite and set his velocity to Zero
     void checkDeath() {
         if (transform.position.y < -2f || life <= 0) {
-            dead = true;
+            // Update global application state
+            GameStateVars.playerCurrentLifes -= 1;
+
+            // Update player current state
+            dead = true;           
             rb.velocity = Vector2.zero;
             rb.gravityScale = 0f;
             SpriteRenderer renderer = gameObject.GetComponent<SpriteRenderer>();
@@ -139,6 +170,10 @@ public class PlayerController : MonoBehaviour {
             IDamageable dmged = coll.gameObject.GetComponent<IDamageable>();
             dmged.damage(attackPower);
         }
+    }
+
+    public bool isDead() {
+        return dead;
     }
 
 }

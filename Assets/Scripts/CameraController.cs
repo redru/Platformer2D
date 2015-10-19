@@ -3,25 +3,23 @@ using System.Collections;
 
 public class CameraController : MonoBehaviour {
 
-    public Transform targetObject;
+    public GameObject targetObject;
+    private Rigidbody2D targetRb;
+
     private Vector3 difference;
-    private Vector3 velocity = Vector3.zero;
+    private Vector3 velocity = Vector2.zero;
 
     void Start () {
-        difference = transform.position - targetObject.position;
+        targetRb = targetObject.GetComponent<Rigidbody2D>();
+        difference = transform.position - targetObject.transform.position;
 	}
-	
-	void Update () {
-	
-	}
-
-    void FixedUpdate(){
-
-    }
 
     void LateUpdate() {
-        // transform.position = targetObject.position + difference;
-        transform.position = Vector3.SmoothDamp(transform.position, targetObject.position + difference, ref velocity, 0.5f);
+        move(targetRb.velocity / 2f);
+    }
+
+    void move(Vector3 vel) {
+        transform.position = Vector3.SmoothDamp(transform.position, targetObject.transform.position + difference, ref velocity, 0.25f);
     }
 
 }
