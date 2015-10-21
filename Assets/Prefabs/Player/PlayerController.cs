@@ -1,7 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
-public class PlayerController : MonoBehaviour {
+public class PlayerController : MonoBehaviour, IDamageable {
 
     public int life = 100;
     public int playerDefaultLifes = 3;
@@ -27,6 +28,7 @@ public class PlayerController : MonoBehaviour {
     private bool stunned = false;
     private float stunTime = 0f;
     private float stunCount = 0f;
+    private bool levelFinished = false;
 
 	void Start () {
         rb = GetComponent<Rigidbody2D> ();
@@ -36,27 +38,17 @@ public class PlayerController : MonoBehaviour {
 
 	void Update () {
         // Remove all PJ logic when is dead
-        if (!dead) {
+        if (!dead && !levelFinished) {
             updateStun();
 
             // If is press Space button, jump and set Animation
-            if (Input.GetKeyDown(KeyCode.Space) && grounded && !stunned)
-            {
-                rb.AddForce(new Vector2(0f, jumpForce), ForceMode2D.Impulse);
-                anim.SetBool("Jumping", true);
+            if (Input.GetKeyDown(KeyCode.Space) && grounded && !stunned) {
+                jump(1f);
             }
 
             // Get left mouse click, handle attack and set Animation
             if (Input.GetMouseButtonDown(0) && !stunned && lastAttackMoment + attackRate <= (Time.time)) {
-                if (rb.velocity.x != 0f || !grounded) {
-                    anim.SetTrigger("RunAttack");
-                } else {
-                    anim.SetTrigger("IdleAttack");
-                }
-
-                audioAttack.Play();
-                checkAttackCollision(Physics2D.OverlapCircleAll(attackPoint.position, 0.20f, attackMask.value));
-                lastAttackMoment = Time.time;
+                attack();                
             }
 
             // Checks if PJ is dead
@@ -66,7 +58,7 @@ public class PlayerController : MonoBehaviour {
 
 	void FixedUpdate() {
         // Remove all PJ logic when is dead
-        if (!dead) {
+        if (!dead && !levelFinished) {
 
             // A - D keypress check
             float h = Input.GetAxis("Horizontal");
@@ -78,14 +70,12 @@ public class PlayerController : MonoBehaviour {
                 anim.SetBool("Jumping", false);
             }
 
-            if (h != 0f && !stunned)
-            {
+            if (h != 0f && !stunned) {
                 rb.velocity = new Vector2(speed * h, rb.velocity.y);
                 anim.SetBool("Running", true);
 
                 // Character rotation based on the positiveness of the velocity
-                if (h < 0f)
-                {
+                if (h < 0f) {
                     transform.rotation = Quaternion.AngleAxis(180, Vector2.up);
                     rotation = -1f;
                 } else if (h > 0f) {
@@ -107,6 +97,10 @@ public class PlayerController : MonoBehaviour {
             rb.velocity = currentVel * -2;
         } else if (coll.gameObject.name == "Boss1Event") {
             stun(1.5f);
+        } else if (coll.gameObject.name == "LevelFinish") {
+            levelFinished = true;
+            stun(0f);
+            GameStateVars.levelComplete = true;
         }
 
     }
@@ -164,11 +158,39 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
+    // Makes the player attack
+    void attack() {
+        checkAttackCollision(Physics2D.OverlapCircleAll(attackPoint.position, 0.16f, attackMask.value));
+        audioAttack.Play();
+        lastAttackMoment = Time.time;
+
+        if (rb.velocity.x != 0f || !grounded) {
+            anim.SetTrigger("RunAttack");
+        } else {
+            anim.SetTrigger("IdleAttack");
+        }
+    }
+
+    public int damage(int damageTaken) {
+        life -= damageTaken;
+        return damageTaken;
+    }
+
+    void jump(float multiplier) {
+        rb.AddForce(new Vector2(0f, jumpForce * multiplier), ForceMode2D.Impulse);
+        anim.SetBool("Jumping", true);
+    }
+
     // Deal damage when attack collides with other colliders
     void checkAttackCollision(Collider2D[] colliders) {
         foreach (Collider2D coll in colliders) {
             IDamageable dmged = coll.gameObject.GetComponent<IDamageable>();
             dmged.damage(attackPower);
+
+            if (coll.name == "Boss_1") {
+                stun(0.5f);
+                rb.velocity = new Vector2(-speed * 2, speed * 2);
+            }
         }
     }
 

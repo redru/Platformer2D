@@ -89,6 +89,11 @@ public class GameStateManager : MonoBehaviour {
 
         // Player state
         GUI.Label(new Rect(Screen.width - 110, 10, 100, 20), "LIFES: " + GameStateVars.playerCurrentLifes);
+
+        if (GameStateVars.levelComplete) {
+            GUI.Label(new Rect(Screen.width / 2, Screen.height / 1.5f, 500, 40), "GRAZIE MILLE PER AVER GIOCATO!");
+        }
+
     }
 
 }
